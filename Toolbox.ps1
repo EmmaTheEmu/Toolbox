@@ -20,7 +20,7 @@ function main {
     main
 }
 
-# Network functions
+# Network functions 
 
 function network_select {
     Clear-Host
