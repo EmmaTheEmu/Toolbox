@@ -44,7 +44,7 @@ function ip_info {
 
 function reset_dns {
     # Added exception for VPNs to avoid resetting the wrong one.
-    $adapters = get-netadapter | where-object { $_.status -eq "Up" -and ($_.ifName -notlike "*Forti*") } 
+    $adapters = get-netadapter | where-object { $_.status -eq "Up" -and (($_.ifName -notlike "*VPN*")) } 
     Set-DnsClientServerAddress -ResetServerAddresses -InterfaceIndex $adapters.ifIndex
     Write-Host "DNS of $($adapters.interfacedescription) has been reset."
 }
@@ -91,6 +91,7 @@ function performance_select {
     Write-Host "1. Performance analyzer"
     Write-Host "2. WU Installer"
     Write-Host "3. Export System and Application event logs"
+    Write-Host "4. Install Lenovo Vantage recommended updates"
     $selection = Read-Host
 
     switch ($selection) {
@@ -98,6 +99,7 @@ function performance_select {
         1 { performance_analyzer }
         2 { install_wu }
         3 { event_logs }
+        4 { lenovo_update }
     }
     main
 }
@@ -128,6 +130,13 @@ function event_logs {
     wevtutil epl System C:\windows\temp\eventlogs\system_logs.evtx
     wevtutil epl Application C:\windows\temp\eventlogs\application_logs.evtx
     Write-Host "Event logs have been exported to c:\windows\temp\eventlogs"
+}
+
+function lenovo_update{
+    # https://jantari.github.io/LSUClient-docs/docs/topics/best-practices/
+    Install-Module -Name LSUClient -Force
+    Import-Module LSUClient
+    Get-LSUpdate | Install-LSUpdate | format-table -Property Title, Type, Success
 }
 
 # Checks info
@@ -176,8 +185,6 @@ function Get-AntiVirusProduct {
 
 
     )
-
-    #$AntivirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Query $wmiQuery  @psboundparameters # -ErrorVariable myError -ErrorAction 'SilentlyContinue' # did not work            
     $AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  -ComputerName $computername
 
     $ret = @()
